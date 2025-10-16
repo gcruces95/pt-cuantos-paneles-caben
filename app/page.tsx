@@ -1,6 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import RoofVisualization from "@/app/components/RoofVisualization";
+
+interface Panel {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	orientation: "horizontal" | "vertical";
+}
 
 export default function Home() {
 	const [roofWidth, setRoofWidth] = useState("5");
@@ -16,6 +25,98 @@ export default function Home() {
 		horizontal: 0,
 		vertical: 0,
 	});
+	const [panels, setPanels] = useState<Panel[]>([]);
+
+	const generatePanels = (
+		rWidth: number,
+		rHeight: number,
+		pWidth: number,
+		pHeight: number,
+		gap: number,
+		orientation: "horizontal" | "vertical" | "mixed"
+	): Panel[] => {
+		const result: Panel[] = [];
+
+		if (orientation === "horizontal") {
+			const cols = Math.floor((rWidth + gap) / (pWidth + gap));
+			const rows = Math.floor((rHeight + gap) / (pHeight + gap));
+			for (let row = 0; row < rows; row++) {
+				for (let col = 0; col < cols; col++) {
+					result.push({
+						x: col * (pWidth + gap),
+						y: row * (pHeight + gap),
+						width: pWidth,
+						height: pHeight,
+						orientation: "horizontal",
+					});
+				}
+			}
+		} else if (orientation === "vertical") {
+			const cols = Math.floor((rWidth + gap) / (pHeight + gap));
+			const rows = Math.floor((rHeight + gap) / (pWidth + gap));
+			for (let row = 0; row < rows; row++) {
+				for (let col = 0; col < cols; col++) {
+					result.push({
+						x: col * (pHeight + gap),
+						y: row * (pWidth + gap),
+						width: pHeight,
+						height: pWidth,
+						orientation: "vertical",
+					});
+				}
+			}
+		} else {
+			// mixed - generar la mejor combinación
+			const maxHRows = Math.floor((rHeight + gap) / (pHeight + gap));
+			let maxPanels = 0;
+			let bestPanels: Panel[] = [];
+
+			for (let hRows = 0; hRows <= maxHRows; hRows++) {
+				const tempPanels: Panel[] = [];
+				const hCols = Math.floor((rWidth + gap) / (pWidth + gap));
+
+				// Paneles horizontales
+				for (let row = 0; row < hRows; row++) {
+					for (let col = 0; col < hCols; col++) {
+						tempPanels.push({
+							x: col * (pWidth + gap),
+							y: row * (pHeight + gap),
+							width: pWidth,
+							height: pHeight,
+							orientation: "horizontal",
+						});
+					}
+				}
+
+				// Paneles verticales en el espacio restante
+				const usedHeight = hRows * (pHeight + gap);
+				const remainingHeight = rHeight - usedHeight + gap;
+				const vRows = Math.floor(remainingHeight / (pWidth + gap));
+				const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
+
+				for (let row = 0; row < vRows; row++) {
+					for (let col = 0; col < vCols; col++) {
+						tempPanels.push({
+							x: col * (pHeight + gap),
+							y: usedHeight + row * (pWidth + gap) - gap,
+							width: pHeight,
+							height: pWidth,
+							orientation: "vertical",
+						});
+					}
+				}
+
+				if (tempPanels.length > maxPanels) {
+					maxPanels = tempPanels.length;
+					bestPanels = [...tempPanels];
+				}
+			}
+
+			return bestPanels;
+		}
+
+		return result;
+	};
 
 	const calculateMixed = (
 		rWidth: number,
@@ -76,17 +177,17 @@ export default function Home() {
 			return;
 		}
 
-		// Orientación horizontal (con espaciado)
+		// Orientación horizontal
 		const hCols = Math.floor((rWidth + gap) / (pWidth + gap));
 		const hRows = Math.floor((rHeight + gap) / (pHeight + gap));
 		const horizontal = hCols * hRows;
 
-		// Orientación vertical (con espaciado)
+		// Orientación vertical
 		const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
 		const vRows = Math.floor((rHeight + gap) / (pWidth + gap));
 		const vertical = vCols * vRows;
 
-		// Orientación mixta (con espaciado)
+		// Orientación mixta
 		const mixed = calculateMixed(rWidth, rHeight, pWidth, pHeight, gap);
 
 		setHorizontalCount(horizontal);
@@ -96,6 +197,22 @@ export default function Home() {
 			horizontal: mixed.horizontal,
 			vertical: mixed.vertical,
 		});
+
+		// Generar paneles para visualización de la mejor opción
+		let bestOrientation: "horizontal" | "vertical" | "mixed" = "horizontal";
+		const max = Math.max(horizontal, vertical, mixed.total);
+		if (max === mixed.total) bestOrientation = "mixed";
+		else if (max === vertical) bestOrientation = "vertical";
+
+		const generatedPanels = generatePanels(
+			rWidth,
+			rHeight,
+			pWidth,
+			pHeight,
+			gap,
+			bestOrientation
+		);
+		setPanels(generatedPanels);
 	};
 
 	const bestOption = () => {
@@ -107,144 +224,175 @@ export default function Home() {
 
 	return (
 		<div className="min-h-screen bg-gray-100 p-8">
-			<div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
-				<h1 className="text-3xl font-bold text-gray-800 mb-6">
+			<div className="max-w-6xl mx-auto">
+				<h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">
 					Calculadora de Paneles Solares
 				</h1>
-				<div className="space-y-4">
-					<div>
-						<h2 className="text-xl font-semibold mb-3">
-							Dimensiones del Techo
-						</h2>
-						<div className="grid grid-cols-2 gap-4">
+				<div className="grid md:grid-cols-2 gap-6">
+					{/* Panel de entrada */}
+					<div className="bg-white rounded-lg shadow-lg p-6">
+						<div className="space-y-4">
 							<div>
-								<label className="block text-sm font-medium mb-1">
-									Ancho (m)
-								</label>
-								<input
-									type="number"
-									step="0.1"
-									value={roofWidth}
-									onChange={(e) =>
-										setRoofWidth(e.target.value)
-									}
-									className="w-full px-3 py-2 border rounded"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium mb-1">
-									Alto (m)
-								</label>
-								<input
-									type="number"
-									step="0.1"
-									value={roofHeight}
-									onChange={(e) =>
-										setRoofHeight(e.target.value)
-									}
-									className="w-full px-3 py-2 border rounded"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<div>
-						<h2 className="text-xl font-semibold mb-3">
-							Dimensiones del Panel
-						</h2>
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium mb-1">
-									Ancho (m)
-								</label>
-								<input
-									type="number"
-									step="0.01"
-									value={panelWidth}
-									onChange={(e) =>
-										setPanelWidth(e.target.value)
-									}
-									className="w-full px-3 py-2 border rounded"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium mb-1">
-									Alto (m)
-								</label>
-								<input
-									type="number"
-									step="0.01"
-									value={panelHeight}
-									onChange={(e) =>
-										setPanelHeight(e.target.value)
-									}
-									className="w-full px-3 py-2 border rounded"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-						<h2 className="text-xl font-semibold mb-3">
-							Espaciado
-						</h2>
-						<div>
-							<label className="block text-sm font-medium mb-1">
-								Separación entre paneles (m)
-							</label>
-							<input
-								type="number"
-								step="0.01"
-								value={spacing}
-								onChange={(e) => setSpacing(e.target.value)}
-								className="w-full px-3 py-2 border rounded"
-							/>
-						</div>
-					</div>
-
-					<button
-						onClick={calculatePanels}
-						className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
-					>
-						Calcular
-					</button>
-
-					{(horizontalCount > 0 || verticalCount > 0) && (
-						<div className="mt-6 p-4 bg-gray-50 rounded-lg">
-							<h2 className="text-xl font-semibold mb-3">
-								Resultados
-							</h2>
-							<div className="space-y-2">
-								<p className="text-lg">
-									<span className="font-medium">
-										Orientación Horizontal:
-									</span>{" "}
-									{horizontalCount} paneles
-								</p>
-								<p className="text-lg">
-									<span className="font-medium">
-										Orientación Vertical:
-									</span>{" "}
-									{verticalCount} paneles
-								</p>
-								<div className="bg-orange-100 p-3 rounded mt-2">
-									<p className="text-lg">
-										<span className="font-medium">
-											Orientación Mixta:
-										</span>{" "}
-										{mixedCount} paneles
-									</p>
-									<p className="text-sm text-gray-600">
-										{mixedDetails.horizontal} horizontales |{" "}
-										{mixedDetails.vertical} verticales
-									</p>
+								<h2 className="text-xl font-semibold mb-3">
+									Dimensiones del Techo
+								</h2>
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm font-medium mb-1">
+											Ancho (m)
+										</label>
+										<input
+											type="number"
+											step="0.1"
+											value={roofWidth}
+											onChange={(e) =>
+												setRoofWidth(e.target.value)
+											}
+											className="w-full px-3 py-2 border rounded"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-1">
+											Alto (m)
+										</label>
+										<input
+											type="number"
+											step="0.1"
+											value={roofHeight}
+											onChange={(e) =>
+												setRoofHeight(e.target.value)
+											}
+											className="w-full px-3 py-2 border rounded"
+										/>
+									</div>
 								</div>
-								<p className="text-lg font-bold mt-4 text-green-700">
-									Mejor opción: {bestOption()}
+							</div>
+
+							<div>
+								<h2 className="text-xl font-semibold mb-3">
+									Dimensiones del Panel
+								</h2>
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm font-medium mb-1">
+											Ancho (m)
+										</label>
+										<input
+											type="number"
+											step="0.01"
+											value={panelWidth}
+											onChange={(e) =>
+												setPanelWidth(e.target.value)
+											}
+											className="w-full px-3 py-2 border rounded"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-1">
+											Alto (m)
+										</label>
+										<input
+											type="number"
+											step="0.01"
+											value={panelHeight}
+											onChange={(e) =>
+												setPanelHeight(e.target.value)
+											}
+											className="w-full px-3 py-2 border rounded"
+										/>
+									</div>
+								</div>
+							</div>
+
+							<div>
+								<h2 className="text-xl font-semibold mb-3">
+									Espaciado
+								</h2>
+								<div>
+									<label className="block text-sm font-medium mb-1">
+										Separación (m)
+									</label>
+									<input
+										type="number"
+										step="0.01"
+										value={spacing}
+										onChange={(e) =>
+											setSpacing(e.target.value)
+										}
+										className="w-full px-3 py-2 border rounded"
+									/>
+								</div>
+							</div>
+
+							<button
+								onClick={calculatePanels}
+								className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+							>
+								Calcular
+							</button>
+						</div>
+					</div>
+
+					{/* Panel de resultados */}
+					<div className="bg-white rounded-lg shadow-lg p-6">
+						{panels.length > 0 ? (
+							<div className="space-y-4">
+								<div>
+									<h2 className="text-xl font-semibold mb-3">
+										Resultados
+									</h2>
+									<div className="space-y-2 text-sm">
+										<p>
+											<span className="font-medium">
+												Horizontal:
+											</span>{" "}
+											{horizontalCount} paneles
+										</p>
+										<p>
+											<span className="font-medium">
+												Vertical:
+											</span>{" "}
+											{verticalCount} paneles
+										</p>
+										<div className="bg-orange-100 p-2 rounded">
+											<p>
+												<span className="font-medium">
+													Mixta:
+												</span>{" "}
+												{mixedCount} paneles
+											</p>
+											<p className="text-xs text-gray-600">
+												{mixedDetails.horizontal}{" "}
+												Horizontales |{" "}
+												{mixedDetails.vertical}{" "}
+												Verticales
+											</p>
+										</div>
+										<p className="text-lg font-bold text-green-700 pt-2">
+											Mejor: {bestOption()}
+										</p>
+									</div>
+								</div>
+
+								<div>
+									<h2 className="text-xl font-semibold mb-3">
+										Visualización
+									</h2>
+									<RoofVisualization
+										roofWidth={parseFloat(roofWidth)}
+										roofHeight={parseFloat(roofHeight)}
+										panels={panels}
+									/>
+								</div>
+							</div>
+						) : (
+							<div className="flex items-center justify-center h-full text-gray-400">
+								<p>
+									Ingresa las dimensiones y presiona calcular
 								</p>
 							</div>
-						</div>
-					)}
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
