@@ -10,6 +10,46 @@ export default function Home() {
 
 	const [horizontalCount, setHorizontalCount] = useState(0);
 	const [verticalCount, setVerticalCount] = useState(0);
+	const [mixedCount, setMixedCount] = useState(0);
+	const [mixedDetails, setMixedDetails] = useState({
+		horizontal: 0,
+		vertical: 0,
+	});
+
+	const calculateMixed = (
+		rWidth: number,
+		rHeight: number,
+		pWidth: number,
+		pHeight: number
+	) => {
+		let maxPanels = 0;
+		let bestH = 0;
+		let bestV = 0;
+
+		const maxHRows = Math.floor(rHeight / pHeight);
+
+		for (let hRows = 0; hRows <= maxHRows; hRows++) {
+			const hCols = Math.floor(rWidth / pWidth);
+			const hPanels = hRows * hCols;
+
+			const usedHeight = hRows * pHeight;
+			const remainingHeight = rHeight - usedHeight;
+
+			const vRows = Math.floor(remainingHeight / pWidth);
+			const vCols = Math.floor(rWidth / pHeight);
+			const vPanels = vRows * vCols;
+
+			const total = hPanels + vPanels;
+
+			if (total > maxPanels) {
+				maxPanels = total;
+				bestH = hPanels;
+				bestV = vPanels;
+			}
+		}
+
+		return { total: maxPanels, horizontal: bestH, vertical: bestV };
+	};
 
 	const calculatePanels = () => {
 		const rWidth = parseFloat(roofWidth);
@@ -41,8 +81,23 @@ export default function Home() {
 		const vRows = Math.floor(rHeight / pWidth);
 		const vertical = vCols * vRows;
 
+		// Orientación mixta
+		const mixed = calculateMixed(rWidth, rHeight, pWidth, pHeight);
+
 		setHorizontalCount(horizontal);
 		setVerticalCount(vertical);
+		setMixedCount(mixed.total);
+		setMixedDetails({
+			horizontal: mixed.horizontal,
+			vertical: mixed.vertical,
+		});
+	};
+
+	const bestOption = () => {
+		const max = Math.max(horizontalCount, verticalCount, mixedCount);
+		if (max === mixedCount) return `Mixta (${mixedCount})`;
+		if (max === horizontalCount) return `Horizontal (${horizontalCount})`;
+		return `Vertical (${verticalCount})`;
 	};
 
 	return (
@@ -51,7 +106,6 @@ export default function Home() {
 				<h1 className="text-3xl font-bold text-gray-800 mb-6">
 					Calculadora de Paneles Solares
 				</h1>
-
 				<div className="space-y-4">
 					<div>
 						<h2 className="text-xl font-semibold mb-3">
@@ -150,11 +204,20 @@ export default function Home() {
 									</span>{" "}
 									{verticalCount} paneles
 								</p>
-								<p className="text-lg font-bold mt-4">
-									Mejor opción:{" "}
-									{horizontalCount >= verticalCount
-										? `Horizontal (${horizontalCount})`
-										: `Vertical (${verticalCount})`}
+								<div className="bg-orange-100 p-3 rounded mt-2">
+									<p className="text-lg">
+										<span className="font-medium">
+											Orientación Mixta:
+										</span>{" "}
+										{mixedCount} paneles
+									</p>
+									<p className="text-sm text-gray-600">
+										{mixedDetails.horizontal} horizontales |{" "}
+										{mixedDetails.vertical} verticales
+									</p>
+								</div>
+								<p className="text-lg font-bold mt-4 text-green-700">
+									Mejor opción: {bestOption()}
 								</p>
 							</div>
 						</div>
