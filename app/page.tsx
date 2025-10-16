@@ -7,6 +7,7 @@ export default function Home() {
 	const [roofHeight, setRoofHeight] = useState("3");
 	const [panelWidth, setPanelWidth] = useState("1");
 	const [panelHeight, setPanelHeight] = useState("2");
+	const [spacing, setSpacing] = useState("0");
 
 	const [horizontalCount, setHorizontalCount] = useState(0);
 	const [verticalCount, setVerticalCount] = useState(0);
@@ -20,23 +21,24 @@ export default function Home() {
 		rWidth: number,
 		rHeight: number,
 		pWidth: number,
-		pHeight: number
+		pHeight: number,
+		gap: number
 	) => {
 		let maxPanels = 0;
 		let bestH = 0;
 		let bestV = 0;
 
-		const maxHRows = Math.floor(rHeight / pHeight);
+		const maxHRows = Math.floor((rHeight + gap) / (pHeight + gap));
 
 		for (let hRows = 0; hRows <= maxHRows; hRows++) {
-			const hCols = Math.floor(rWidth / pWidth);
+			const hCols = Math.floor((rWidth + gap) / (pWidth + gap));
 			const hPanels = hRows * hCols;
 
-			const usedHeight = hRows * pHeight;
-			const remainingHeight = rHeight - usedHeight;
+			const usedHeight = hRows * (pHeight + gap);
+			const remainingHeight = rHeight - usedHeight + gap;
 
-			const vRows = Math.floor(remainingHeight / pWidth);
-			const vCols = Math.floor(rWidth / pHeight);
+			const vRows = Math.floor(remainingHeight / (pWidth + gap));
+			const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
 			const vPanels = vRows * vCols;
 
 			const total = hPanels + vPanels;
@@ -56,33 +58,36 @@ export default function Home() {
 		const rHeight = parseFloat(roofHeight);
 		const pWidth = parseFloat(panelWidth);
 		const pHeight = parseFloat(panelHeight);
+		const gap = parseFloat(spacing);
 
 		if (
 			isNaN(rWidth) ||
 			isNaN(rHeight) ||
 			isNaN(pWidth) ||
 			isNaN(pHeight) ||
+			isNaN(gap) ||
 			rWidth <= 0 ||
 			rHeight <= 0 ||
 			pWidth <= 0 ||
-			pHeight <= 0
+			pHeight <= 0 ||
+			gap < 0
 		) {
 			alert("Por favor ingresa valores válidos y positivos");
 			return;
 		}
 
-		// Orientación horizontal
-		const hCols = Math.floor(rWidth / pWidth);
-		const hRows = Math.floor(rHeight / pHeight);
+		// Orientación horizontal (con espaciado)
+		const hCols = Math.floor((rWidth + gap) / (pWidth + gap));
+		const hRows = Math.floor((rHeight + gap) / (pHeight + gap));
 		const horizontal = hCols * hRows;
 
-		// Orientación vertical
-		const vCols = Math.floor(rWidth / pHeight);
-		const vRows = Math.floor(rHeight / pWidth);
+		// Orientación vertical (con espaciado)
+		const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
+		const vRows = Math.floor((rHeight + gap) / (pWidth + gap));
 		const vertical = vCols * vRows;
 
-		// Orientación mixta
-		const mixed = calculateMixed(rWidth, rHeight, pWidth, pHeight);
+		// Orientación mixta (con espaciado)
+		const mixed = calculateMixed(rWidth, rHeight, pWidth, pHeight, gap);
 
 		setHorizontalCount(horizontal);
 		setVerticalCount(vertical);
@@ -176,6 +181,24 @@ export default function Home() {
 									className="w-full px-3 py-2 border rounded"
 								/>
 							</div>
+						</div>
+					</div>
+
+					<div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+						<h2 className="text-xl font-semibold mb-3">
+							Espaciado
+						</h2>
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Separación entre paneles (m)
+							</label>
+							<input
+								type="number"
+								step="0.01"
+								value={spacing}
+								onChange={(e) => setSpacing(e.target.value)}
+								className="w-full px-3 py-2 border rounded"
+							/>
 						</div>
 					</div>
 
