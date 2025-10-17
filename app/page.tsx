@@ -26,6 +26,12 @@ export default function Home() {
 		vertical: 0,
 	});
 	const [panels, setPanels] = useState<Panel[]>([]);
+	const [horizontalPanels, setHorizontalPanels] = useState<Panel[]>([]);
+	const [verticalPanels, setVerticalPanels] = useState<Panel[]>([]);
+	const [mixedPanels, setMixedPanels] = useState<Panel[]>([]);
+	const [selectedView, setSelectedView] = useState<
+		"horizontal" | "vertical" | "mixed"
+	>("horizontal");
 
 	const generatePanels = (
 		rWidth: number,
@@ -66,7 +72,7 @@ export default function Home() {
 				}
 			}
 		} else {
-			// mixed - generar la mejor combinación
+			// MIXTO: Generará la mejor combinación de paneles horizontales y verticales
 			const maxHRows = Math.floor((rHeight + gap) / (pHeight + gap));
 			let maxPanels = 0;
 			let bestPanels: Panel[] = [];
@@ -90,7 +96,7 @@ export default function Home() {
 
 				// Paneles verticales en el espacio restante
 				const usedHeight = hRows * (pHeight + gap);
-				const remainingHeight = rHeight - usedHeight + gap;
+				const remainingHeight = rHeight - usedHeight;
 				const vRows = Math.floor(remainingHeight / (pWidth + gap));
 				const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
 
@@ -98,7 +104,7 @@ export default function Home() {
 					for (let col = 0; col < vCols; col++) {
 						tempPanels.push({
 							x: col * (pHeight + gap),
-							y: usedHeight + row * (pWidth + gap) - gap,
+							y: usedHeight + row * (pWidth + gap),
 							width: pHeight,
 							height: pWidth,
 							orientation: "vertical",
@@ -136,7 +142,7 @@ export default function Home() {
 			const hPanels = hRows * hCols;
 
 			const usedHeight = hRows * (pHeight + gap);
-			const remainingHeight = rHeight - usedHeight + gap;
+			const remainingHeight = rHeight - usedHeight;
 
 			const vRows = Math.floor(remainingHeight / (pWidth + gap));
 			const vCols = Math.floor((rWidth + gap) / (pHeight + gap));
@@ -198,21 +204,50 @@ export default function Home() {
 			vertical: mixed.vertical,
 		});
 
-		// Generar paneles para visualización de la mejor opción
-		let bestOrientation: "horizontal" | "vertical" | "mixed" = "horizontal";
-		const max = Math.max(horizontal, vertical, mixed.total);
-		if (max === mixed.total) bestOrientation = "mixed";
-		else if (max === vertical) bestOrientation = "vertical";
-
-		const generatedPanels = generatePanels(
+		// Generara paneles para las tres orientaciones
+		const hPanels = generatePanels(
 			rWidth,
 			rHeight,
 			pWidth,
 			pHeight,
 			gap,
-			bestOrientation
+			"horizontal"
 		);
-		setPanels(generatedPanels);
+		const vPanels = generatePanels(
+			rWidth,
+			rHeight,
+			pWidth,
+			pHeight,
+			gap,
+			"vertical"
+		);
+		const mPanels = generatePanels(
+			rWidth,
+			rHeight,
+			pWidth,
+			pHeight,
+			gap,
+			"mixed"
+		);
+
+		setHorizontalPanels(hPanels);
+		setVerticalPanels(vPanels);
+		setMixedPanels(mPanels);
+
+		// Determinar la mejor opción y establecerla como vista inicial
+		let bestOrientation: "horizontal" | "vertical" | "mixed" = "horizontal";
+		const max = Math.max(horizontal, vertical, mixed.total);
+		if (max === mixed.total) bestOrientation = "mixed";
+		else if (max === vertical) bestOrientation = "vertical";
+
+		setSelectedView(bestOrientation);
+		setPanels(
+			bestOrientation === "horizontal"
+				? hPanels
+				: bestOrientation === "vertical"
+				? vPanels
+				: mPanels
+		);
 	};
 
 	const bestOption = () => {
@@ -220,6 +255,13 @@ export default function Home() {
 		if (max === mixedCount) return `Mixta (${mixedCount})`;
 		if (max === horizontalCount) return `Horizontal (${horizontalCount})`;
 		return `Vertical (${verticalCount})`;
+	};
+
+	const isBestOption = (option: "horizontal" | "vertical" | "mixed") => {
+		const max = Math.max(horizontalCount, verticalCount, mixedCount);
+		if (option === "horizontal") return horizontalCount === max;
+		if (option === "vertical") return verticalCount === max;
+		return mixedCount === max;
 	};
 
 	return (
@@ -378,10 +420,70 @@ export default function Home() {
 									<h2 className="text-xl font-semibold mb-3">
 										Visualización
 									</h2>
+
+									{/* Selector de orientación */}
+									<div className="mb-4 flex gap-2">
+										<button
+											onClick={() => {
+												setSelectedView("horizontal");
+												setPanels(horizontalPanels);
+											}}
+											className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors relative ${
+												selectedView === "horizontal"
+													? "bg-blue-600 text-white"
+													: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+											}`}
+										>
+											Horizontal ({horizontalCount})
+											{isBestOption("horizontal") && (
+												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+													Mejor
+												</span>
+											)}
+										</button>
+										<button
+											onClick={() => {
+												setSelectedView("vertical");
+												setPanels(verticalPanels);
+											}}
+											className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors relative ${
+												selectedView === "vertical"
+													? "bg-purple-600 text-white"
+													: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+											}`}
+										>
+											Vertical ({verticalCount})
+											{isBestOption("vertical") && (
+												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+													Mejor
+												</span>
+											)}
+										</button>
+										<button
+											onClick={() => {
+												setSelectedView("mixed");
+												setPanels(mixedPanels);
+											}}
+											className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors relative ${
+												selectedView === "mixed"
+													? "bg-orange-600 text-white"
+													: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+											}`}
+										>
+											Mixta ({mixedCount})
+											{isBestOption("mixed") && (
+												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+													Mejor
+												</span>
+											)}
+										</button>
+									</div>
+
 									<RoofVisualization
 										roofWidth={parseFloat(roofWidth)}
 										roofHeight={parseFloat(roofHeight)}
 										panels={panels}
+										spacing={parseFloat(spacing)}
 									/>
 								</div>
 							</div>
