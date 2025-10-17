@@ -34,26 +34,52 @@ Por ejemplo, podríamos decir que en el siguiente ejemplo caben 5 rectángulos d
 
 ---
 
-### 🚀 Cómo ejecutar?
+### 🚀 Cómo ejecutar
 
-Por favor completa esta sección con instrucciones detalladas:
-
-```markdown
 ## Requisitos Previos
 
-_[Lista las versiones de software necesarias: Node.js, Python, etc.]_
+- Node.js 20.x o superior
+- npm, yarn o pnpm (se recomienda pnpm)
 
 ## Instalación
 
-_[Comandos para instalar dependencias]_
+```bash
+# Clonar el repositorio (si aplica)
+git clone git@github.com:gcruces95/pt-cuantos-paneles-caben.git
+cd pt-cuantos-paneles-caben
+
+# Instalar dependencias
+pnpm install
+# o si usas npm: npm install
+# o si usas yarn: yarn install
+```
 
 ## Cómo Ejecutar
 
-_[Comandos para iniciar la aplicación]_
+```bash
+# Modo desarrollo
+pnpm dev
+# o: npm run dev
+# o: yarn dev
+
+# Modo producción
+pnpm build
+pnpm start
+```
 
 ## Acceso a la Aplicación
 
-_[URL o puerto donde se puede acceder]_
+Una vez iniciado el servidor de desarrollo, accede a:
+```
+http://localhost:3000
+```
+Nota: Puede que el puerto no sea el 3000, sino que sea otro.
+
+## 🌐 Demo en Vivo
+
+El proyecto está desplegado y disponible en:
+```
+https://pt-cuantos-paneles-caben.vercel.app/
 ```
 
 ---
@@ -62,15 +88,72 @@ _[URL o puerto donde se puede acceder]_
 
 ### Explicación del Algoritmo
 
-_[Explica aquí cómo funciona tu algoritmo para encontrar la máxima cantidad de paneles]_
+El algoritmo implementado calcula la cantidad máxima de paneles que caben en un techo considerando tres orientaciones diferentes:
+
+**1. Orientación Horizontal**
+- Los paneles mantienen su orientación original (ancho × alto)
+- Fórmula: `cols = floor((anchoTecho + gap) / (anchoPanel + gap))`
+- Fórmula: `rows = floor((altoTecho + gap) / (altoPanel + gap))`
+- Total: `cols × rows`
+
+**2. Orientación Vertical**
+- Los paneles se rotan 90 grados (alto × ancho)
+- Fórmula: `cols = floor((anchoTecho + gap) / (altoPanel + gap))`
+- Fórmula: `rows = floor((altoTecho + gap) / (anchoPanel + gap))`
+- Total: `cols × rows`
+
+**3. Orientación Mixta (Óptima)**
+- Combina paneles horizontales y verticales para maximizar la cantidad
+- Proceso iterativo:
+  1. Prueba diferentes cantidades de filas horizontales (desde 0 hasta el máximo posible)
+  2. Para cada configuración, calcula cuántos paneles horizontales caben
+  3. Calcula el espacio restante vertical
+  4. Llena el espacio restante con paneles verticales
+  5. Selecciona la combinación que maximiza el total de paneles
+
+El algoritmo garantiza que siempre se encuentra la configuración óptima al evaluar todas las combinaciones posibles.
 
 ### Decisiones Técnicas
 
-_[Explica las tecnologías elegidas y por qué]_
+**Framework y Tecnologías:**
+- **Next.js 15**: Framework React moderno con renderizado del lado del servidor y optimizaciones automáticas
+- **TypeScript**: Tipado estático para mayor seguridad y mantenibilidad del código
+- **Tailwind CSS 4**: Sistema de diseño utility-first para desarrollo rápido y consistente
+- **React 19**: Última versión con mejoras de rendimiento y nuevas características
+
+**Justificación:**
+- Next.js ofrece una excelente experiencia de desarrollo con hot reload y optimizaciones automáticas
+- TypeScript previene errores comunes y mejora la documentación del código
+- Tailwind CSS permite crear interfaces responsivas rápidamente sin CSS personalizado
+- La aplicación es completamente client-side, sin necesidad de backend separado
+
+**Sobre el Gap (Espaciado entre Paneles):**
+
+Aunque el problema original no requería considerar espaciado entre paneles, decidí implementar esta funcionalidad porque la encontré fundamental para hacer simulaciones más realistas. En instalaciones reales de paneles solares, es necesario dejar un margen de separación entre paneles por varias razones:
+- Permitir el tránsito de técnicos durante instalación y mantenimiento
+- Facilitar la ventilación y evitar sobrecalentamiento
+- Y otros factores que puedan existir.
+
+Esta característica adicional hace que la herramienta sea más útil para casos de uso reales, permitiendo al usuario configurar el espaciado según sus necesidades específicas.
 
 ### Estructura del Proyecto
 
-_[Describe brevemente la organización de tu código]_
+```
+pt-cuantos-paneles-caben/
+├── app/
+│   ├── components/
+│   │   └── RoofVisualization.tsx    # Componente de visualización SVG
+│   ├── page.tsx                     # Página principal con lógica y UI
+│   ├── layout.tsx                   # Layout principal de Next.js
+│   └── globals.css                  # Estilos globales
+├── package.json                     # Dependencias y scripts
+└── README.md                        # Este archivo
+```
+
+**Componentes Principales:**
+
+- **page.tsx**: Contiene toda la lógica del algoritmo, manejo de estado y UI principal
+- **RoofVisualization.tsx**: Renderiza la visualización SVG del techo y paneles, incluyendo gaps
 
 ---
 
@@ -100,7 +183,65 @@ _[Si implementaste algún bonus, indica cuál y explica tu solución]_
 
 ## 🤔 Supuestos y Decisiones
 
-_[Si tuviste que tomar algún supuesto o decisión de diseño, explícalo aquí]_
+### Supuestos del Problema
+
+1. **Gap entre paneles**: Se asumió que podría existir un espaciado configurable entre paneles para casos reales donde se requiere separación física
+2. **Posicionamiento**: Los paneles se posicionan desde la esquina superior izquierda (0,0) sin margen inicial
+3. **Unidades**: Todas las medidas se asumen en metros, aunque el sistema funciona con cualquier unidad consistente
+4. **Precisión**: Se utilizan números decimales para dimensiones (0.01m de precisión)
+
+### Decisiones de Diseño
+
+1. **Cálculo de tres orientaciones**: Se decidió implementar y mostrar las tres orientaciones (horizontal, vertical y mixta) para dar al usuario máxima visibilidad de opciones
+2. **Visualización interactiva**: Se agregó un selector de visualización para comparar las diferentes orientaciones
+3. **Indicadores visuales**: 
+   - Paneles horizontales en azul
+   - Paneles verticales en morado
+   - Gaps en amarillo para diferenciación clara
+   - Badge verde en la mejor opción
+
+## ✨ Características Adicionales Implementadas
+
+Además de los requisitos base del ejercicio, se implementaron las siguientes características:
+
+### 1. Sistema de Espaciado (Gap)
+- Input configurable para espaciado entre paneles
+- Visualización de gaps en color amarillo diferenciado
+- Cálculos ajustados para respetar el espaciado en todas las orientaciones
+
+### 2. Selector de Visualización Interactivo
+- Tres botones para cambiar entre orientaciones: Horizontal, Vertical y Mixta
+- Indicador visual de la opción seleccionada
+- Contadores de paneles en cada botón
+- Badge "Mejor" en la orientación óptima
+
+### 3. Desglose en Modo Mixto
+- Muestra cantidad de paneles horizontales y verticales por separado
+- Visualización clara de ambos tipos de paneles en colores diferentes
+
+### 4. Interfaz Mejorada
+- Diseño responsivo con Tailwind CSS
+- Feedback visual inmediato
+- Colores distintivos para cada tipo de panel y gap
+- Leyenda de colores dinámica
+
+### 5. Validación de Datos
+- Validación de inputs numéricos positivos
+- Manejo de valores decimales
+- Alertas para valores inválidos
+
+### Comparación con Requisitos Base
+
+| Requisito | Estado | Nota |
+|-----------|--------|------|
+| Algoritmo de maximización | ✅ Cumplido | Implementado con tres orientaciones |
+| Input de dimensiones del techo | ✅ Cumplido | Ancho y alto configurables |
+| Input de dimensiones de paneles | ✅ Cumplido | Ancho y alto configurables |
+| Visualización gráfica | ✅ Cumplido | SVG con colores diferenciados |
+| Sin restricciones de orientación | ✅ Cumplido | Soporta horizontal, vertical y mixta |
+| **Espaciado entre paneles** | ➕ Extra | No solicitado, agregado para casos reales |
+| **Selector interactivo** | ➕ Extra | Mejora la experiencia de usuario |
+| **Indicador de mejor opción** | ➕ Extra | Facilita la toma de decisiones |
 
 ---
 
