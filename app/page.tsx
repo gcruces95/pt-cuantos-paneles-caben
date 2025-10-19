@@ -21,17 +21,21 @@ export default function Home() {
 	const [horizontalCount, setHorizontalCount] = useState(0);
 	const [verticalCount, setVerticalCount] = useState(0);
 	const [mixedCount, setMixedCount] = useState(0);
+
 	const [mixedDetails, setMixedDetails] = useState({
 		horizontal: 0,
 		vertical: 0,
 	});
+
 	const [panels, setPanels] = useState<Panel[]>([]);
 	const [horizontalPanels, setHorizontalPanels] = useState<Panel[]>([]);
 	const [verticalPanels, setVerticalPanels] = useState<Panel[]>([]);
 	const [mixedPanels, setMixedPanels] = useState<Panel[]>([]);
+
 	const [selectedView, setSelectedView] = useState<
 		"horizontal" | "vertical" | "mixed"
 	>("horizontal");
+	const [hasCalculated, setHasCalculated] = useState(false);
 
 	const generatePanels = (
 		rWidth: number,
@@ -248,6 +252,7 @@ export default function Home() {
 				? vPanels
 				: mPanels
 		);
+		setHasCalculated(true);
 	};
 
 	const bestOption = () => {
@@ -377,7 +382,7 @@ export default function Home() {
 
 					{/* Panel de resultados */}
 					<div className="bg-white rounded-lg shadow-lg p-6">
-						{panels.length > 0 ? (
+						{hasCalculated ? (
 							<div className="space-y-4">
 								<div>
 									<h2 className="text-xl font-semibold mb-3">
@@ -410,9 +415,18 @@ export default function Home() {
 												Verticales
 											</p>
 										</div>
-										<p className="text-lg font-bold text-green-700 pt-2">
-											Mejor: {bestOption()}
-										</p>
+										{horizontalCount > 0 ||
+										verticalCount > 0 ||
+										mixedCount > 0 ? (
+											<p className="text-lg font-bold text-green-700 pt-2">
+												Mejor: {bestOption()}
+											</p>
+										) : (
+											<p className="text-lg font-bold text-red-600 pt-2">
+												No caben paneles con estas
+												dimensiones
+											</p>
+										)}
 									</div>
 								</div>
 
@@ -435,11 +449,12 @@ export default function Home() {
 											}`}
 										>
 											Horizontal ({horizontalCount})
-											{isBestOption("horizontal") && (
-												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-													Mejor
-												</span>
-											)}
+											{isBestOption("horizontal") &&
+												horizontalCount > 0 && (
+													<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+														Mejor
+													</span>
+												)}
 										</button>
 										<button
 											onClick={() => {
@@ -453,11 +468,12 @@ export default function Home() {
 											}`}
 										>
 											Vertical ({verticalCount})
-											{isBestOption("vertical") && (
-												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-													Mejor
-												</span>
-											)}
+											{isBestOption("vertical") &&
+												verticalCount > 0 && (
+													<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+														Mejor
+													</span>
+												)}
 										</button>
 										<button
 											onClick={() => {
@@ -471,19 +487,20 @@ export default function Home() {
 											}`}
 										>
 											Mixta ({mixedCount})
-											{isBestOption("mixed") && (
-												<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-													Mejor
-												</span>
-											)}
+											{isBestOption("mixed") &&
+												mixedCount > 0 && (
+													<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+														Mejor
+													</span>
+												)}
 										</button>
 									</div>
 
 									<RoofVisualization
-										roofWidth={parseFloat(roofWidth)}
-										roofHeight={parseFloat(roofHeight)}
+										roofWidth={parseFloat(roofWidth) || 0}
+										roofHeight={parseFloat(roofHeight) || 0}
 										panels={panels}
-										spacing={parseFloat(spacing)}
+										spacing={parseFloat(spacing) || 0}
 									/>
 								</div>
 							</div>
